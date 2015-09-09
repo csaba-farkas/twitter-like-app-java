@@ -40,9 +40,9 @@ public class TweetDatabasePersistor implements IPersistor {
 
     //Instance variables
     private Connection connection;
-    private final String dbUrl = "jdbc:mysql://79.170.44.155:3306/cl36-twitter";
-    private final String userName = "cl36-twitter";
-    private final String pword = "csabaTwitter";
+    private final String dbUrl = "your-database-location";
+    private final String userName = "your-database-name";
+    private final String pword = "your-database-password";
     
     /**
      * Constructor method. Creates a connection to the database using url, username
