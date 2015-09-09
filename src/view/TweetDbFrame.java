@@ -18,7 +18,6 @@
 
 package view;
 
-import com.mysql.jdbc.exceptions.MySQLIntegrityConstraintViolationException;
 import controller.TweetDatabaseController;
 import controller.interfaces.ITweetDatabaseGui;
 import java.awt.BorderLayout;
@@ -55,11 +54,14 @@ import net.miginfocom.swing.MigLayout;
 import view.components.DocumentSizeFilter;
 
 /**
+ * Class extends to JFrame. Main GUI element. Implements ITweetDatabaseGui.
+ * 
  * @author Csaba Farkas <Csaba.Farkas@mycit.ie Student ID: R00117945>
  */
 public class TweetDbFrame extends JFrame implements ITweetDatabaseGui {
     
     //Button labels are in html form - BoxLayout will stretch buttons this way
+    //Other constants for labels, messages etc.
     private static final String ADD_BUTTON_LABEL = "<html>Add User...</html>";
     private static final String ADD_TWEET_BUTTON_LABEL = "<html>Add Tweet...</html>";
     private static final String DELETE_BUTTON_LABEL = "<html>Delete...</html>";
@@ -82,20 +84,25 @@ public class TweetDbFrame extends JFrame implements ITweetDatabaseGui {
     private static final String USER_DUPLICATE_ERROR = "Error: User already exists!";
     
     //Instance varaibles
-    private JButton addButton;
+    private JButton addButton;              //Buttons in 'eastPanel'
     private JButton addTweetButton;
     private JButton deleteButton;
     private JButton modifyButton;
     private JButton cancelButton;
-    private JTable userTable;
-    private JTextArea tweets;
-    private JTextField usernameField;
+    private JTable userTable;               //Table
+    private JTextArea tweets;               //Text areas to display tweets and
+    private JTextArea tweetArea;            //to add a new tweet.
+    private JTextField usernameField;       //Text fields to add and modify user.
     private JTextField countryField;
-    private TweetDbTableModel tableModel;
-    private JLabel remaningLabel;
-    private JTextArea tweetArea;
+    private TweetDbTableModel tableModel;   //Table model
+    private JLabel remaningLabel;           //A JLabel object.
     
-    
+    /**
+     * Constructor method. Creates a JFrame object and inserts different JPanel
+     * objects into its contentPane.
+     * 
+     * @param title Indicates the title of the frame.
+     */
     public TweetDbFrame(String title) {
         super(title);
         
@@ -177,6 +184,7 @@ public class TweetDbFrame extends JFrame implements ITweetDatabaseGui {
         this.addTweetButton.setEnabled(false);
         this.addTweetButton.addActionListener((ActionEvent e) -> {
             
+            //I created an inner class because it was too long to be an anonymous class
             AddTweetDialog addTweetDialog = new AddTweetDialog();
        
         });
@@ -197,7 +205,7 @@ public class TweetDbFrame extends JFrame implements ITweetDatabaseGui {
             
             int result = JOptionPane.showConfirmDialog(this, modifyPanel, TweetDbFrame.MODIFY_DIALOG_TITLE, JOptionPane.OK_CANCEL_OPTION);
             
-            //Modify user if 'OK' and username field is not empty.
+            //Modify user if 'OK' is pressed and username field is not empty.
             if(result == JOptionPane.OK_OPTION && !this.usernameField.getText().isEmpty()) {
                 String username = this.usernameField.getText();
                 String country = this.countryField.getText();
@@ -228,6 +236,7 @@ public class TweetDbFrame extends JFrame implements ITweetDatabaseGui {
             if(answer == JOptionPane.YES_OPTION) {
                 String username = TweetDatabaseController.getInstance().getDataModel().get(rowSelected).getUsername();
                 TweetDatabaseController.getInstance().deleteUser(rowSelected);
+                TweetDatabaseController.getInstance().getGuiReference().refreshTweets(-1);
                 JOptionPane.showMessageDialog(rootPane, (username + TweetDbFrame.USER_DELETED_LABEL));
             }
         });
@@ -270,13 +279,15 @@ public class TweetDbFrame extends JFrame implements ITweetDatabaseGui {
         this.userTable = new JTable();
         this.tableModel = new TweetDbTableModel(TweetDatabaseController.getInstance().getDataModel());
         this.userTable.setModel(this.tableModel);
-        this.userTable.setDefaultRenderer(Object.class, new TweetDbTableRenderer());
+        //Attach a table renderer object to the table
+        this.userTable.setDefaultRenderer(Object.class, new TweetDbTableRenderer());       
         //ListSelectionListener attached to table-> enable/disable 3 buttons when selection is on/off
         this.userTable.getSelectionModel().addListSelectionListener((ListSelectionEvent e) -> {
             if(this.userTable.getSelectedRow() != -1) {
                 this.deleteButton.setEnabled(true);
                 this.modifyButton.setEnabled(true);
                 this.addTweetButton.setEnabled(true);
+                //Refresh tweets in text area to display tweets of selected user.
                 int rowNumber = this.userTable.getSelectedRow();
                 TweetDatabaseController.getInstance().getGuiReference().refreshTweets(rowNumber);
             }
@@ -288,32 +299,44 @@ public class TweetDbFrame extends JFrame implements ITweetDatabaseGui {
             
         });
         
-        //Disable multi-line selection
-        this.userTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-        JTableHeader tableHeader = this.userTable.getTableHeader();
+        this.userTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);   //Disable multi-line selection
+        
+        JTableHeader tableHeader = this.userTable.getTableHeader();             //Get table header and customize them
         tableHeader.setFont(tableHeader.getFont().deriveFont(Font.BOLD));
         tableHeader.setBackground(new Color(107, 161, 237));
-        JScrollPane tablePane = new JScrollPane(this.userTable);
-        tablePane.setBorder(BorderFactory.createTitledBorder(TweetDbFrame.TABLE_BORDER_TITLE));
-        tablePanel.add(tablePane, BorderLayout.CENTER);
-        tablePanel.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
+        
+        //Create a JScroolPane and insert userTable
+        JScrollPane tablePane = new JScrollPane(this.userTable);        
+        //Create a compound border: titled border + padding.
+        tablePane.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createTitledBorder(TweetDbFrame.TABLE_BORDER_TITLE),
+            BorderFactory.createEmptyBorder(5, 5, 5, 5)
+            )
+        );
+        tablePanel.add(tablePane, BorderLayout.CENTER); 
         centerPanel.add(tablePane);
         centerPanel.add(Box.createHorizontalStrut(10));
         
         //Create a text are insulated in a JPanel that displays tweets of selected user.
         JPanel textPanel = new JPanel(new BorderLayout());
         this.tweets = new JTextArea(10, 30);
-        this.tweets.setLineWrap (true);
-        this.tweets.setWrapStyleWord(true);
-        this.tweets.setBackground(new Color(255, 255, 153));
-        this.tweets.setEnabled(false);
-        this.tweets.setDisabledTextColor(Color.black);
-        Font font = this.tweets.getFont();  
+        this.tweets.setLineWrap (true);                 //Set line wrap in text area
+        this.tweets.setWrapStyleWord(true);             //Lines are wrapped by word (instead of breaking words)
+        this.tweets.setBackground(new Color(255, 255, 153));        
+        this.tweets.setEnabled(false);                  //Disable text are (no editting)
+        this.tweets.setDisabledTextColor(Color.black);  //Disabled text is gray by default -> change it to black
+        Font font = this.tweets.getFont();              //Font styling
         this.tweets.setFont(font.deriveFont(Font.BOLD));
+        
+        //Create a new JScrollpane object and insert text area (and some customization i.e. titled border)
         JScrollPane textPane = new JScrollPane(this.tweets);
-        textPane.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
         textPanel.add(textPane, BorderLayout.CENTER);
-        textPanel.setBorder(BorderFactory.createTitledBorder(TweetDbFrame.TWEETS_BORDER_TITLE));
+        //Again, create a compound border: titled border + padding.
+        textPanel.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createTitledBorder(TweetDbFrame.TWEETS_BORDER_TITLE),
+            BorderFactory.createEmptyBorder(5, 5, 5, 5)
+            )
+        );
         centerPanel.add(textPanel);
         
         centerPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
@@ -322,15 +345,26 @@ public class TweetDbFrame extends JFrame implements ITweetDatabaseGui {
     }
     
     /**
-     * Override ITweetDatabaseGui method.
+     * Override ITweetDatabaseGui method. Refresh table after insert, update
+     * or delete in database.
      */
     @Override
-    public void refresh() {
+    public void refreshTable() {
         this.tableModel.fireTableDataChanged();
     }
 
+    /**
+     * Override ITweetDatabaseGui method. Refresh text area with tweets after
+     * table selection changed or new tweet was added.
+     * 
+     * @param rowNumber Indicates the position of user whose tweets are to be displayed in list.
+     */
     @Override
     public void refreshTweets(int rowNumber) {
+        if(rowNumber == -1) {
+            this.tweets.setText("");
+            return;
+        }
         TwitterUser user = TweetDatabaseController.getInstance().getDataModel().get(rowNumber);
         List<Tweet> userTweets = user.getTweets();
 
@@ -343,8 +377,10 @@ public class TweetDbFrame extends JFrame implements ITweetDatabaseGui {
         this.tweets.setText(tweetStr);
     }
     /**
+     * Create a JPanel with two labels and text fields to insert it into a 
+     * JOptionPane when adding/modifying user.
      * 
-     * @return 
+     * @return A JPanel object.
      */
     private JPanel createAddPanel() {
         JPanel addPanel = new JPanel(new MigLayout());
@@ -364,28 +400,36 @@ public class TweetDbFrame extends JFrame implements ITweetDatabaseGui {
 
         public AddTweetDialog() {
             //Create a custom JOptionPane to create a new tweet.
+            //GridBagLayout is used.
             JPanel addTweetPanel = new JPanel(new GridBagLayout());
             GridBagConstraints c = new GridBagConstraints();
             
             int rowNumber = TweetDbFrame.this.userTable.getSelectedRow();
             String username = TweetDatabaseController.getInstance().getDataModel().get(rowNumber).getUsername();
             
+            //Position JLabel in panel.
             c.fill = GridBagConstraints.HORIZONTAL;
             c.gridx = 0;
             c.gridy = 0;
             addTweetPanel.add(new JLabel(username + TweetDbFrame.ADD_NEW_TWEET_LABEL), c);
             
+            //Create, customize and position JTextArea in panel.
             TweetDbFrame.this.tweetArea = new JTextArea(4, 30);
             TweetDbFrame.this.tweetArea.setBackground(new Color(255, 255, 153));
-            TweetDbFrame.this.tweetArea.setBorder(BorderFactory.createLineBorder(new Color(0, 128, 255)));
+            TweetDbFrame.this.tweetArea.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(new Color(0, 128, 255)),
+                BorderFactory.createEmptyBorder(5, 5, 5, 5)
+                )
+            );
             TweetDbFrame.this.tweetArea.setLineWrap (true);
             TweetDbFrame.this.tweetArea.setWrapStyleWord(true);
             
+            //Add label that shows how many characters are left from the 140.
             TweetDbFrame.this.remaningLabel = new JLabel(140 + TweetDbFrame.CHARACTERS_REMAINING_LABEL);
             
             //DocumentFilter attached to track number of characters remaining
             //And to not allow typing after 140 characters were entered
-            //Please see DocumentSizeFilter (Oracle) class for more details
+            //Please see DocumentSizeFilter (downloaded from Oracle's website) class for more details
             DefaultStyledDocument doc = new DefaultStyledDocument();
             doc.setDocumentFilter(new DocumentSizeFilter(140));
             doc.addDocumentListener(new DocumentListener(){
@@ -402,6 +446,7 @@ public class TweetDbFrame extends JFrame implements ITweetDatabaseGui {
                     updateCount();
                 }
                 
+                //Counts the remaining characters and updates JLabel accordingly.
                 private void updateCount() {
                     TweetDbFrame.this.remaningLabel.setText((140 - doc.getLength()) + TweetDbFrame.CHARACTERS_REMAINING_LABEL);
                     if(doc.getLength() == 140) {
@@ -409,6 +454,7 @@ public class TweetDbFrame extends JFrame implements ITweetDatabaseGui {
                     }
                 }
             });
+            //Position text area in panel with more weight (makes it bigger)
             TweetDbFrame.this.tweetArea.setDocument(doc);
             c.fill = GridBagConstraints.HORIZONTAL;
             c.ipady = 20;
@@ -418,6 +464,7 @@ public class TweetDbFrame extends JFrame implements ITweetDatabaseGui {
             c.gridy = 1;
             addTweetPanel.add(TweetDbFrame.this.tweetArea, c);
             
+            //Add and position JLabel
             c.fill = GridBagConstraints.HORIZONTAL;
             c.gridx = 0;
             c.gridy = 2;
@@ -426,13 +473,17 @@ public class TweetDbFrame extends JFrame implements ITweetDatabaseGui {
             
             int result = JOptionPane.showConfirmDialog(TweetDbFrame.this, addTweetPanel, TweetDbFrame.ADD_NEW_TWEET_TITLE, JOptionPane.OK_CANCEL_OPTION);
             
+            //Add tweet if 'OK' is clicked.
             if(result == JOptionPane.OK_OPTION) {
                 try {
+                    //Parse text from document (from index 0 to < length of document)
                     Tweet newTweet = new Tweet(doc.getText(0, doc.getLength()));
+                    //Call controller to add tweet to user and update gui
                     TweetDatabaseController.getInstance().addTweetForUser(newTweet, username, rowNumber);
                     TweetDatabaseController.getInstance().getGuiReference().refreshTweets(rowNumber);
                     
                 } catch (BadLocationException ex) {
+                    //Exception when error happens when parsing text from document
                     JOptionPane.showMessageDialog(null, ex, TweetDbFrame.ERROR_DIALOG_TITLE, JOptionPane.ERROR_MESSAGE);
                 }
             }

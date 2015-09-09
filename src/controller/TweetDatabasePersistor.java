@@ -40,15 +40,15 @@ public class TweetDatabasePersistor implements IPersistor {
 
     //Instance variables
     private Connection connection;
-    private final String dbUrl = "jdbc:mysql://localhost:3306/tweetdata"; //"jdbc:mysql://sql5.freemysqlhosting.net:3306/sql577244";
-    private final String userName = "root";//"sql577244";
-    private final String pword = "";//"rV6!tQ7!";
+    private final String dbUrl = "jdbc:mysql://79.170.44.155:3306/cl36-twitter";
+    private final String userName = "cl36-twitter";
+    private final String pword = "csabaTwitter";
     
     /**
      * Constructor method. Creates a connection to the database using url, username
      * and password.
      */
-    public TweetDatabasePersistor() throws SQLException {
+    public TweetDatabasePersistor() {
         try {
             Class.forName("com.mysql.jdbc.Driver");
             this.connection = DriverManager.getConnection(this.dbUrl, this.userName, this.pword);
@@ -104,9 +104,10 @@ public class TweetDatabasePersistor implements IPersistor {
      * Data types in Tweet table: String, String, Timestamp.
      * 
      * @param twitterUser Indicates TwitterUser objects to be stored in database.
+     * @throws java.sql.SQLException In case of data duplication or any other SQL related errors.
      */
     @Override
-    public void write(TwitterUser twitterUser) {
+    public void write(TwitterUser twitterUser) throws SQLException {
         try {
             PreparedStatement statement = this.connection.prepareStatement("insert into user values (?, ?)");
             statement.setString(1, twitterUser.getUsername());
@@ -125,51 +126,12 @@ public class TweetDatabasePersistor implements IPersistor {
             statement.close();
             
         } catch(SQLException ex) {
-            ex.printStackTrace();
-            JOptionPane.showMessageDialog(null, ex, ex.getMessage(), JOptionPane.ERROR_MESSAGE);
+            //throw the exception to the caller method.
+            throw ex;
         } 
     }
     
-    /**
-     * Implemented IPersistor method. Reads data about a particular user from the
-     * database. 
-     * 
-     * @param username Indicates username of particular user.
-     * @return A TwitterUser object
-     */
-    @Override
-    public TwitterUser readTwitterUser(String username) {
-        
-        //Create a new TwitterUser object using an empty constructor.
-        TwitterUser user = new TwitterUser();
-        try {
-            //Get user details from table: user.
-            Statement getUserStmt = connection.createStatement();
-            ResultSet resSet = getUserStmt.executeQuery("select * from user where username = \'" + username + "\';");
-            while(resSet.next()) {
-                user.setUsername(resSet.getString("username"));
-                user.setCountry(resSet.getString("country"));
-            }
-            resSet.close();
-            
-            //Get tweets from table: tweet.
-            List<Tweet> userTweets = new ArrayList<Tweet>();
-            userTweets = getUserTweets(username);
-            
-            //Add tweets to user.
-            for(Tweet tweet : userTweets) {
-                user.addTweet(tweet);
-            }
-            
-        } catch (SQLException ex) {
-            ex.printStackTrace();
-            JOptionPane.showMessageDialog(null, ex, "Database Error", JOptionPane.ERROR_MESSAGE);
-        }
-        
-        return user;
-    }
-    
-    /**
+     /**
      * Implemented IPersistor method. Reads tweets of a particular user from the
      * database.
      * 
@@ -256,9 +218,10 @@ public class TweetDatabasePersistor implements IPersistor {
      * 
      * @param primaryKey Username as primary key.
      * @param updatedUser Updated user object.
+     * @throws java.sql.SQLException In case updated username is already in the table or other SQL related errors.
      */
     @Override
-    public void updateUser(String primaryKey, TwitterUser updatedUser) {
+    public void updateUser(String primaryKey, TwitterUser updatedUser) throws SQLException {
         try {
             Statement updateStatement = this.connection.createStatement();
             updateStatement.execute("update user set username = \'" + 
@@ -269,8 +232,8 @@ public class TweetDatabasePersistor implements IPersistor {
                                     primaryKey + "\';");
             updateStatement.close();
         } catch (SQLException ex) {
-            ex.printStackTrace();
-            JOptionPane.showMessageDialog(null, ex, "Database Error", JOptionPane.ERROR_MESSAGE);
+            //Throw the exception further to the caller method.
+            throw ex;
         }
     }
     

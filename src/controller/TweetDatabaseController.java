@@ -19,7 +19,9 @@ package controller;
 
 import controller.interfaces.IPersistor;
 import controller.interfaces.ITweetDatabaseGui;
+import java.sql.SQLException;
 import java.util.List;
+import javax.swing.JOptionPane;
 import model.Tweet;
 import model.TwitterUser;
 
@@ -30,24 +32,27 @@ import model.TwitterUser;
  */
 public class TweetDatabaseController {
     
+    //Static method to call an instance of this class
     public static TweetDatabaseController getInstance() {
         return TweetDatabaseControllerHolder.INSTANCE;
     }
     
+    //Empty constructor
     private TweetDatabaseController() {
     
     }
     
+    //Instance variables
     private List<TwitterUser> twitterUsers;
     private ITweetDatabaseGui gui;
     private IPersistor persistor;
-    private boolean isAddedToDatabase;
     
     private static class TweetDatabaseControllerHolder {
 
         private static final TweetDatabaseController INSTANCE = new TweetDatabaseController();
     }
     
+    //Getters-setters
     public List<TwitterUser> getDataModel() {
         return this.twitterUsers;
     }
@@ -83,13 +88,20 @@ public class TweetDatabaseController {
         //Create a new user
         TwitterUser user = new TwitterUser(username, country);
         
-        this.persistor.write(user);
+        //Add user if, and only if there is no other user with the same username in db.
+        try {
+            this.persistor.write(user);
+        } catch (SQLException ex) {
+            ex.printStackTrace();
+            JOptionPane.showMessageDialog(null, ex, ex.getMessage(), JOptionPane.ERROR_MESSAGE);
+            return;
+        }
         
-        //Update model
+        //Update model only after user was successfully added to database.
         this.twitterUsers.add(user);
        
         //Update GUI
-        this.gui.refresh();
+        this.gui.refreshTable();
     }
     
     /**
@@ -106,7 +118,7 @@ public class TweetDatabaseController {
         this.twitterUsers.remove(selectedUser);
         
         //Update GUI
-        this.gui.refresh();
+        this.gui.refreshTable();
     }
     
     /**
@@ -119,15 +131,21 @@ public class TweetDatabaseController {
         //Get primary key
         String primaryKey = this.twitterUsers.get(selectedRow).getUsername();
         
-        //Update model
+        //Update user in db if, and only if the updated username is not a duplicate.
+        try {
+            //Update database
+            this.persistor.updateUser(primaryKey, updatedUser);
+        } catch (SQLException ex) {
+            ex.printStackTrace();
+            JOptionPane.showMessageDialog(null, ex, "Database Error", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+        
+        //Update model only after database is updated (in case an SQLException is thrown)
         this.twitterUsers.set(selectedRow, updatedUser);
         
-        //Update database
-        this.persistor.updateUser(primaryKey, updatedUser);
-        
         //Update GUI
-        this.gui.refresh();
-        
+        this.gui.refreshTable();
     }
     /**
      * Add a new tweet to a user. Update model and database record separately.
@@ -144,9 +162,5 @@ public class TweetDatabaseController {
         //Update persistor
         this.persistor.addTweetForUser(tweet, username);
         
-    }
-    
-    public void refreshTweets(int rowNumber) {
-        this.gui.refreshTweets(rowNumber);
     }
 }

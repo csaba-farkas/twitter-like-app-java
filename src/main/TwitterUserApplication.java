@@ -27,9 +27,15 @@ import model.TwitterUser;
 import view.TweetDbFrame;
 
 /**
+ * Main class. Creates a data persistor object and the controller sets this object
+ * to be the data persistor of the system. Then it creates a list and sets it
+ * to be the data model of the system. Then a GUI object is created and is set
+ * to be the gui of the system.
  * @author Csaba Farkas <Csaba.Farkas@mycit.ie Student ID: R00117945>
  */
 public class TwitterUserApplication {
+    
+    public static final String TITLE = "Twitter Application";
 
     public static void main(String[] args) {
         
@@ -40,7 +46,7 @@ public class TwitterUserApplication {
         
         TweetDatabaseController.getInstance().setDataModel(users);
         
-        ITweetDatabaseGui gui = new TweetDbFrame("Twitter User Application");
+        ITweetDatabaseGui gui = new TweetDbFrame(TwitterUserApplication.TITLE);
         
         TweetDatabaseController.getInstance().setGuiReference(gui);
         

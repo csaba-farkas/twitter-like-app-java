@@ -19,12 +19,14 @@
 package controller.interfaces;
 
 /**
+ * Interface that is implemented by the GUI class.
+ * 
  * @author Csaba Farkas <Csaba.Farkas@mycit.ie Student ID: R00117945>
  *
  */
 public interface ITweetDatabaseGui {
     
-    public void refresh();
+    public void refreshTable();
     public void refreshTweets(int rowNumber);
 
 }

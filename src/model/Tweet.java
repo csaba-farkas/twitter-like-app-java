@@ -24,6 +24,9 @@ import java.util.Calendar;
 import java.util.Date;
 
 /**
+ * Tweet class. It creates a Tweet object containing the text and the date when
+ * the tweet was entered into the system.
+ * 
  * @author Csaba Farkas <Csaba.Farkas@mycit.ie Student ID: R00117945>
  */
 public class Tweet {

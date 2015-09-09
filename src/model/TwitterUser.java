@@ -22,6 +22,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
+ * TwitterUser class. Creates a user object containing a username, country and
+ * a list of tweets. It defines the behaviour of a TwitterUser object.
+ * 
  * @author Csaba Farkas <Csaba.Farkas@mycit.ie Student ID: R00117945>
  */
 public class TwitterUser {
@@ -50,6 +53,7 @@ public class TwitterUser {
         this.tweets = new ArrayList<Tweet>();
     }
     
+    //Getters-setters
     public String getUsername() {
         return username;
     }
@@ -77,6 +81,11 @@ public class TwitterUser {
         this.country = country;
     }
     
+    /**
+     * Override toString object.
+     * 
+     * @return A string containing the tweet and the date and time it was entered.
+     */
     @Override
     public String toString() {
         

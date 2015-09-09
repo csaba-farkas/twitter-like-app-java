@@ -18,6 +18,7 @@
 
 package controller.interfaces;
 
+import java.sql.SQLException;
 import java.util.List;
 import model.Tweet;
 import model.TwitterUser;
@@ -31,11 +32,10 @@ import model.TwitterUser;
  */
 public interface IPersistor {
 
-    public void write(TwitterUser twitterUser);
-    public TwitterUser readTwitterUser(String username);
+    public void write(TwitterUser twitterUser) throws SQLException ;
     public List<Tweet> getUserTweets(String username);
     public void addTweetForUser(Tweet newTweet, String username);
     public void removeTwitterUser(String username);
-    public void updateUser(String primaryKey, TwitterUser updatedUser);
+    public void updateUser(String primaryKey, TwitterUser updatedUser) throws SQLException;
     public List<TwitterUser> read();
 }
